@@ -178,36 +178,259 @@ const Admin = () => {
       "Numéro d'inscription": reg.registration_number,
       "Prénom": reg.first_name,
       "Nom": reg.last_name,
-      "Email": reg.email,
-      "Téléphone": reg.phone,
+      "Date de naissance": reg.birth_date,
+      "Lieu de naissance": reg.birth_place,
       "Genre": reg.gender === "M" ? "Masculin" : "Féminin",
+      "Téléphone": reg.phone,
+      "Email": reg.email,
+      "Ville": reg.city,
+      "Département": reg.department,
       "Région": reg.region,
+      "Pays": reg.country,
+      "Date BAC": reg.bac_date,
       "Série BAC": reg.bac_series,
       "Mention BAC": reg.bac_mention,
+      "Type BAC": reg.bac_type,
+      "Centre examen BAC": reg.bac_exam_center || "N/A",
+      "Date Probatoire": reg.prob_date,
+      "Série Probatoire": reg.prob_series,
+      "Mention Probatoire": reg.prob_mention,
+      "Type Probatoire": reg.prob_type,
+      "Centre examen Probatoire": reg.prob_exam_center || "N/A",
+      "Nom du père": reg.father_name,
+      "Profession du père": reg.father_profession || "Non renseigné",
+      "Téléphone du père": reg.father_phone || "Non renseigné",
+      "Nom de la mère": reg.mother_name,
+      "Profession de la mère": reg.mother_profession || "Non renseigné",
+      "Téléphone de la mère": reg.mother_phone || "Non renseigné",
+      "Tuteur légal": reg.legal_guardian_name || "Non applicable",
+      "Relation tuteur": reg.legal_guardian_relation || "Non applicable",
+      "Téléphone tuteur": reg.legal_guardian_phone || "Non applicable",
+      "Statut": reg.status || "soumis",
       "Statut paiement": reg.payment_status,
-      "Montant": reg.payment_amount,
-      "Date d'inscription": reg.created_at,
+      "Référence paiement": reg.payment_reference || "Non défini",
+      "Montant payé": reg.payment_amount || 25000,
+      "Date paiement": reg.payment_date || "Non payé",
+      "Méthode paiement": reg.payment_method || "Non défini",
+      "Date création": reg.created_at,
+      "Date mise à jour": reg.updated_at,
     })));
+    
+    // Set column widths for better readability
+    const colWidths = [
+      { wch: 18 }, // Numéro d'inscription
+      { wch: 15 }, // Prénom
+      { wch: 15 }, // Nom
+      { wch: 12 }, // Date de naissance
+      { wch: 15 }, // Lieu de naissance
+      { wch: 10 }, // Genre
+      { wch: 15 }, // Téléphone
+      { wch: 25 }, // Email
+      { wch: 15 }, // Ville
+      { wch: 15 }, // Département
+      { wch: 15 }, // Région
+      { wch: 12 }, // Pays
+      { wch: 12 }, // Date BAC
+      { wch: 10 }, // Série BAC
+      { wch: 12 }, // Mention BAC
+      { wch: 12 }, // Type BAC
+      { wch: 18 }, // Centre examen BAC
+      { wch: 12 }, // Date Probatoire
+      { wch: 12 }, // Série Probatoire
+      { wch: 12 }, // Mention Probatoire
+      { wch: 15 }, // Type Probatoire
+      { wch: 18 }, // Centre examen Probatoire
+      { wch: 20 }, // Nom du père
+      { wch: 18 }, // Profession du père
+      { wch: 15 }, // Téléphone du père
+      { wch: 20 }, // Nom de la mère
+      { wch: 18 }, // Profession de la mère
+      { wch: 15 }, // Téléphone de la mère
+      { wch: 20 }, // Tuteur légal
+      { wch: 15 }, // Relation tuteur
+      { wch: 15 }, // Téléphone tuteur
+      { wch: 12 }, // Statut
+      { wch: 15 }, // Statut paiement
+      { wch: 18 }, // Référence paiement
+      { wch: 12 }, // Montant payé
+      { wch: 15 }, // Date paiement
+      { wch: 15 }, // Méthode paiement
+      { wch: 18 }, // Date création
+      { wch: 18 }, // Date mise à jour
+    ];
+    worksheet['!cols'] = colWidths;
+    
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Inscriptions");
-    XLSX.writeFile(workbook, "inscriptions.xlsx");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Inscriptions Complètes");
+    XLSX.writeFile(workbook, `inscriptions_completes_${new Date().toLocaleDateString()}.xlsx`);
   };
 
   const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.text("Liste des Inscriptions", 20, 10);
-
-    let y = 30;
-    filteredRegistrations.forEach((reg: any, index) => {
-      if (y > 270) {
-        doc.addPage();
-        y = 30;
-      }
-      doc.text(`${index + 1}. ${reg.registration_number} - ${reg.first_name} ${reg.last_name} - ${reg.email}`, 20, y);
-      y += 10;
+    const doc = new jsPDF('landscape'); // Landscape format
+    
+    // Colors
+    const primaryColor = [41, 128, 185]; // Blue
+    const secondaryColor = [52, 152, 219]; // Light blue
+    const accentColor = [46, 204, 113]; // Green
+    const textColor = [44, 62, 80]; // Dark gray
+    const lightGray = [236, 240, 241]; // Light gray
+    
+    // Header
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 0, 297, 25, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('LISTE DES INSCRIPTIONS - CONCOURS', 148, 17, { align: 'center' });
+    
+    // Subheader with statistics
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total: ${filteredRegistrations.length} candidats | Généré le: ${new Date().toLocaleDateString('fr-FR')}`, 148, 22, { align: 'center' });
+    
+    // Table headers
+    const startY = 35;
+    const rowHeight = 8;
+    const colWidths = [25, 20, 18, 18, 22, 18, 15, 15, 20, 15, 18, 15, 25, 20];
+    const headers = [
+      'Numéro',
+      'Prénom',
+      'Nom',
+      'Téléphone',
+      'Email',
+      'Région',
+      'Dépt',
+      'Série',
+      'BAC Date',
+      'Mention',
+      'Statut',
+      'Montant',
+      'Paiement',
+      'Créé le'
+    ];
+    
+    let currentY = startY;
+    
+    // Table header background
+    doc.setFillColor(...secondaryColor);
+    doc.rect(10, currentY - 3, 277, 10, 'F');
+    
+    // Table header text
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    
+    let currentX = 12;
+    headers.forEach((header, index) => {
+      doc.text(header, currentX + colWidths[index]/2, currentY + 3, { align: 'center' });
+      currentX += colWidths[index];
     });
-
-    doc.save("inscriptions.pdf");
+    
+    currentY += 12;
+    
+    // Table rows
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...textColor);
+    doc.setFontSize(8);
+    
+    filteredRegistrations.forEach((reg: any, index) => {
+      // Alternate row colors
+      if (index % 2 === 0) {
+        doc.setFillColor(...lightGray);
+        doc.rect(10, currentY - 2, 277, rowHeight, 'F');
+      }
+      
+      let rowX = 12;
+      const rowData = [
+        reg.registration_number || '',
+        reg.first_name || '',
+        reg.last_name || '',
+        reg.phone || '',
+        reg.email || '',
+        reg.region || '',
+        reg.department || '',
+        reg.bac_series || '',
+        reg.bac_date ? new Date(reg.bac_date).toLocaleDateString('fr-FR') : '',
+        reg.bac_mention || '',
+        (reg.payment_status === 'completed' ? 'PAYÉ' : 
+         reg.payment_status === 'pending' ? 'ATTENTE' : 
+         reg.payment_status === 'failed' ? 'ÉCHOUÉ' : reg.payment_status || ''),
+        `${reg.payment_amount || 25000} FCFA`,
+        (reg.payment_status === 'completed' ? '✓ ' : '') + 
+        (reg.payment_date ? new Date(reg.payment_date).toLocaleDateString('fr-FR') : 'Non payé'),
+        reg.created_at ? new Date(reg.created_at).toLocaleDateString('fr-FR') : ''
+      ];
+      
+      // Status color coding
+      if (reg.payment_status === 'completed') {
+        doc.setTextColor(46, 204, 113); // Green
+      } else if (reg.payment_status === 'pending') {
+        doc.setTextColor(241, 196, 15); // Yellow
+      } else if (reg.payment_status === 'failed') {
+        doc.setTextColor(231, 76, 60); // Red
+      } else {
+        doc.setTextColor(...textColor); // Default
+      }
+      
+      rowData.forEach((cellData, colIndex) => {
+        doc.text(String(cellData), rowX + colWidths[colIndex]/2, currentY + 4, { align: 'center' });
+        rowX += colWidths[colIndex];
+      });
+      
+      // Reset text color for next row
+      doc.setTextColor(...textColor);
+      
+      currentY += rowHeight;
+      
+      // Page break
+      if (currentY > 180) {
+        doc.addPage('landscape');
+        
+        // Add header to new page
+        doc.setFillColor(...primaryColor);
+        doc.rect(0, 0, 297, 15, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('LISTE DES INSCRIPTIONS - CONCOURS (suite)', 148, 10, { align: 'center' });
+        
+        currentY = 25;
+        
+        // Repeat header row
+        doc.setFillColor(...secondaryColor);
+        doc.rect(10, currentY - 3, 277, 10, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        
+        let headerX = 12;
+        headers.forEach((header, index) => {
+          doc.text(header, headerX + colWidths[index]/2, currentY + 3, { align: 'center' });
+          headerX += colWidths[index];
+        });
+        
+        currentY += 12;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...textColor);
+        doc.setFontSize(8);
+      }
+    });
+    
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text(`Page ${i} sur ${pageCount} - Système d'inscription aux concours`, 148, 200, { align: 'center' });
+      doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`, 148, 205, { align: 'center' });
+    }
+    
+    // Save the PDF
+    doc.save(`liste_inscriptions_concours_${new Date().toLocaleDateString('fr-FR').replace(/\//g, '-')}.pdf`);
   };
 
   const uniqueRegions = useMemo(() => {
@@ -378,14 +601,18 @@ const Admin = () => {
                 </Select>
               </div>
               <div className="flex gap-2">
-                <Button onClick={exportToExcel} variant="outline">
+                <Button onClick={exportToExcel} variant="outline" className="bg-green-50 hover:bg-green-100">
                   <Download className="mr-2 h-4 w-4" />
-                  Exporter Excel
+                  Exporter Excel Complet
                 </Button>
-                <Button onClick={exportToPDF} variant="outline">
+                <Button onClick={exportToPDF} variant="outline" className="bg-blue-50 hover:bg-blue-100">
                   <Download className="mr-2 h-4 w-4" />
-                  Exporter PDF
+                  Exporter PDF Stylisé
                 </Button>
+              </div>
+              <div className="text-sm text-muted-foreground mt-2">
+                💡 <strong>Excel:</strong> Informations complètes avec données personnelles, académiques et familiales<br/>
+                💡 <strong>PDF:</strong> Format paysage avec tableau stylisé, codes couleurs et en-têtes élégants
               </div>
             </CardContent>
           </Card>

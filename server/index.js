@@ -137,7 +137,7 @@ app.get('/api/registrations', async (req, res) => {
 
     // Get paginated data
     const queryParams = [...params, limit, offset];
-    const [rows] = await pool.execute(
+    const [rows] = await pool.query(
       `SELECT * FROM registrations WHERE ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
       queryParams
     );
